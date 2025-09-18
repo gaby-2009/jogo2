@@ -3,276 +3,175 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Mini Jogo Papa Louie</title>
+<title>Jogo Labirinto estilo Friv</title>
 <style>
   body {
-    font-family: 'Comic Sans MS', cursive, sans-serif;
-    background: #ffe4c4;
-    margin: 0; padding: 0;
+    background: #222;
+    margin: 0; 
     display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  header {
-    background: #d35400;
-    width: 100%;
-    color: white;
-    padding: 20px;
-    font-size: 2em;
-    font-weight: bold;
-    text-align: center;
-    box-shadow: 0 4px 6px #b24300;
-  }
-  main {
-    background: white;
-    margin: 20px;
-    padding: 20px;
-    border-radius: 15px;
-    max-width: 600px;
-    width: 90%;
-    box-shadow: 0 6px 10px rgba(0,0,0,0.1);
-  }
-  .order, .build-area, .ingredients, .status {
-    margin-bottom: 20px;
-  }
-  h2 {
-    margin-bottom: 10px;
-  }
-  .order-list {
-    display: flex;
-    gap: 10px;
-  }
-  .ingredient-icon {
-    font-size: 2.5em;
-    user-select: none;
-  }
-  .order-ingredient {
-    font-size: 2em;
-  }
-  .build-area {
-    min-height: 120px;
-    background: #f7f7f7;
-    border: 2px dashed #d35400;
-    border-radius: 15px;
-    padding: 15px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
     justify-content: center;
-    color: #999;
-  }
-  .build-ingredient {
-    font-size: 3em;
-    cursor: pointer;
+    align-items: center;
+    height: 100vh;
     user-select: none;
+    font-family: Arial, sans-serif;
   }
-  .ingredients {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
+  #game {
+    position: relative;
+    width: 400px;
+    height: 400px;
+    background: #eee;
+    border: 5px solid #444;
   }
-  .ingredients div {
-    background: #f39c12;
-    border-radius: 12px;
-    padding: 10px;
-    cursor: pointer;
-    box-shadow: 0 4px 7px rgba(0,0,0,0.2);
-    transition: background-color 0.3s;
-    user-select: none;
+  .wall {
+    position: absolute;
+    background: #333;
   }
-  .ingredients div:hover {
-    background: #f1c40f;
+  #player {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background: #3498db;
+    border-radius: 6px;
+    transition: left 0.1s, top 0.1s;
   }
-  button {
-    background: #d35400;
-    border: none;
-    color: white;
-    font-weight: bold;
-    padding: 10px 20px;
-    border-radius: 12px;
-    cursor: pointer;
-    font-size: 1.1em;
-    box-shadow: 0 4px 6px #b24300;
-    transition: background-color 0.3s;
+  #exit {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background: #2ecc71;
+    border-radius: 6px;
   }
-  button:hover {
-    background: #e67e22;
-  }
-  .status {
-    font-weight: bold;
-    font-size: 1.3em;
-    min-height: 30px;
-    text-align: center;
-  }
-  .score {
-    text-align: right;
-    font-size: 1.3em;
-    margin-bottom: 10px;
-    color: #d35400;
-    font-weight: bold;
+  #message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2em;
+    color: #27ae60;
+    display: none;
   }
 </style>
 </head>
 <body>
-<header>Mini Jogo Papa Louie - Faça os Sanduíches!</header>
-<main>
-  <div class="score">Pontos: <span id="score">0</span></div>
-
-  <div class="order">
-    <h2>Pedido do Cliente:</h2>
-    <div id="orderList" class="order-list"></div>
+  <div id="game" tabindex="0">
+    <div id="player"></div>
+    <div id="exit"></div>
+    <div id="message">Você Venceu!</div>
   </div>
-
-  <div class="build-area" id="buildArea" title="Clique nos ingredientes abaixo para montar o sanduíche">Nenhum ingrediente adicionado</div>
-
-  <div class="ingredients">
-    <div data-ingredient="pão" title="Pão">🍞</div>
-    <div data-ingredient="alface" title="Alface">🥬</div>
-    <div data-ingredient="queijo" title="Queijo">🧀</div>
-    <div data-ingredient="hambúrguer" title="Hambúrguer">🍔</div>
-    <div data-ingredient="tomate" title="Tomate">🍅</div>
-    <div data-ingredient="cebola" title="Cebola">🧅</div>
-  </div>
-
-  <div style="text-align:center; margin-top: 15px;">
-    <button id="serveBtn">Servir Sanduíche</button>
-    <button id="clearBtn" style="margin-left: 15px; background:#7f8c8d;">Limpar</button>
-  </div>
-
-  <div class="status" id="statusMsg"></div>
-</main>
 
 <script>
-  const orders = [
-    ['pão','hambúrguer','queijo','pão'],
-    ['pão','hambúrguer','alface','tomate','pão'],
-    ['pão','queijo','hambúrguer','cebola','pão'],
-    ['pão','alface','tomate','queijo','hambúrguer','pão'],
-    ['pão','hambúrguer','queijo','cebola','tomate','pão']
+  const game = document.getElementById('game');
+  const player = document.getElementById('player');
+  const exit = document.getElementById('exit');
+  const message = document.getElementById('message');
+
+  const size = 30; // tamanho do player e bloco (px)
+  const step = size; // movimento em passos de 30px
+
+  // Posições iniciais
+  let playerPos = {x: 0, y: 0};
+  const exitPos = {x: 370, y: 370}; // perto do canto inferior direito
+
+  // Definição das paredes (x, y, largura, altura)
+  const wallsData = [
+    {x: 0, y: 0, width: 400, height: 10},   // topo
+    {x: 0, y: 390, width: 400, height: 10}, // base
+    {x: 0, y: 0, width: 10, height: 400},   // esquerda
+    {x: 390, y: 0, width: 10, height: 400}, // direita
+
+    // paredes internas
+    {x: 60, y: 0, width: 10, height: 300},
+    {x: 120, y: 100, width: 200, height: 10},
+    {x: 320, y: 100, width: 10, height: 300},
+    {x: 180, y: 200, width: 10, height: 200},
+    {x: 240, y: 0, width: 10, height: 200},
+    {x: 240, y: 300, width: 80, height: 10},
   ];
 
-  let currentOrderIndex = 0;
-  let currentBuild = [];
-  let score = 0;
-
-  const orderList = document.getElementById('orderList');
-  const buildArea = document.getElementById('buildArea');
-  const scoreEl = document.getElementById('score');
-  const statusMsg = document.getElementById('statusMsg');
-  const serveBtn = document.getElementById('serveBtn');
-  const clearBtn = document.getElementById('clearBtn');
-
-  // Função para mostrar o pedido atual
-  function showOrder() {
-    orderList.innerHTML = '';
-    const order = orders[currentOrderIndex];
-    order.forEach(item => {
-      const span = document.createElement('span');
-      span.className = 'order-ingredient';
-      span.textContent = ingredientEmoji(item);
-      span.title = capitalize(item);
-      orderList.appendChild(span);
-    });
-  }
-
-  // Função para mostrar o sanduíche sendo montado
-  function showBuild() {
-    buildArea.innerHTML = '';
-    if(currentBuild.length === 0) {
-      buildArea.textContent = 'Nenhum ingrediente adicionado';
-      buildArea.style.color = '#999';
-      return;
-    }
-    buildArea.style.color = '#222';
-    currentBuild.forEach((item, index) => {
-      const span = document.createElement('span');
-      span.className = 'build-ingredient';
-      span.textContent = ingredientEmoji(item);
-      span.title = capitalize(item);
-      // Permite remover ingrediente clicando nele
-      span.addEventListener('click', () => {
-        removeIngredient(index);
-      });
-      buildArea.appendChild(span);
-    });
-  }
-
-  // Converte nome do ingrediente para emoji
-  function ingredientEmoji(name) {
-    switch(name) {
-      case 'pão': return '🍞';
-      case 'hambúrguer': return '🍔';
-      case 'queijo': return '🧀';
-      case 'alface': return '🥬';
-      case 'tomate': return '🍅';
-      case 'cebola': return '🧅';
-      default: return '?';
-    }
-  }
-
-  // Capitaliza primeira letra
-  function capitalize(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  }
-
-  // Adiciona ingrediente ao sanduíche
-  document.querySelectorAll('.ingredients div').forEach(div => {
-    div.addEventListener('click', () => {
-      currentBuild.push(div.dataset.ingredient);
-      showBuild();
-      statusMsg.textContent = '';
-    });
+  // Cria paredes no DOM
+  wallsData.forEach(w => {
+    const wall = document.createElement('div');
+    wall.classList.add('wall');
+    wall.style.left = w.x + 'px';
+    wall.style.top = w.y + 'px';
+    wall.style.width = w.width + 'px';
+    wall.style.height = w.height + 'px';
+    game.appendChild(wall);
   });
 
-  // Remove ingrediente pelo índice (clicando no ingrediente montado)
-  function removeIngredient(index) {
-    currentBuild.splice(index, 1);
-    showBuild();
+  // Posiciona player e saída
+  function updatePositions() {
+    player.style.left = playerPos.x + 'px';
+    player.style.top = playerPos.y + 'px';
+
+    exit.style.left = exitPos.x + 'px';
+    exit.style.top = exitPos.y + 'px';
   }
 
-  // Botão limpar
-  clearBtn.addEventListener('click', () => {
-    currentBuild = [];
-    showBuild();
-    statusMsg.textContent = '';
-  });
+  updatePositions();
 
-  // Verifica se o sanduíche montado bate com o pedido
-  function checkOrder() {
-    const order = orders[currentOrderIndex];
-    if(order.length !== currentBuild.length) return false;
-
-    for(let i = 0; i < order.length; i++) {
-      if(order[i] !== currentBuild[i]) return false;
+  // Função para checar colisão entre player e paredes
+  function isColliding(newX, newY) {
+    const playerRect = {x: newX, y: newY, width: size, height: size};
+    const walls = document.querySelectorAll('.wall');
+    for(let wall of walls) {
+      const rect = {
+        x: parseInt(wall.style.left),
+        y: parseInt(wall.style.top),
+        width: parseInt(wall.style.width),
+        height: parseInt(wall.style.height),
+      };
+      if(rectanglesOverlap(playerRect, rect)) {
+        return true;
+      }
     }
-    return true;
+    return false;
   }
 
-  // Serve o sanduíche
-  serveBtn.addEventListener('click', () => {
-    if(currentBuild.length === 0) {
-      statusMsg.textContent = 'Adicione ingredientes antes de servir!';
-      return;
+  // Checa se dois retângulos se sobrepõem
+  function rectanglesOverlap(r1, r2) {
+    return !(r2.x >= r1.x + r1.width || 
+             r2.x + r2.width <= r1.x || 
+             r2.y >= r1.y + r1.height ||
+             r2.y + r2.height <= r1.y);
+  }
+
+  // Movimento do jogador
+  window.addEventListener('keydown', e => {
+    if(message.style.display === 'block') return; // jogo acabado
+
+    let newX = playerPos.x;
+    let newY = playerPos.y;
+
+    switch(e.key) {
+      case 'ArrowUp': newY -= step; break;
+      case 'ArrowDown': newY += step; break;
+      case 'ArrowLeft': newX -= step; break;
+      case 'ArrowRight': newX += step; break;
+      default: return;
     }
 
-    if(checkOrder()) {
-      score += 10;
-      statusMsg.style.color = 'green';
-      statusMsg.textContent = 'Pedido correto! +10 pontos';
-      currentOrderIndex = (currentOrderIndex + 1) % orders.length;
-      currentBuild = [];
-      showOrder();
-      showBuild();
-      scoreEl.textContent = score;
-    } else {
-      statusMsg.style.color = 'red';
-      statusMsg.textContent = 'Pedido incorreto, tente novamente!';
+    // Evita mover fora da área
+    if(newX < 0 || newY < 0 || newX > 400 - size || newY > 400 - size) return;
+
+    // Checa colisão
+    if(!isColliding(newX, newY)) {
+      playerPos.x = newX;
+      playerPos.y = newY;
+      updatePositions();
+      checkWin();
     }
   });
 
-  // Inicializa o jogo
-  showOrder();
-  showBuild();
+  // Verifica vitória
+  function checkWin() {
+    if(playerPos.x === exitPos.x && playerPos.y === exitPos.y) {
+      message.style.display = 'block';
+    }
+  }
+
+  // Foco no game para capturar teclado
+  game.focus();
 </script>
 </body>
 </html>
