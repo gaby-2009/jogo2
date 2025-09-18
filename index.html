@@ -3,382 +3,276 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Jogos estilo Papa's Lego</title>
+<title>Mini Jogo Papa Louie</title>
 <style>
   body {
     font-family: 'Comic Sans MS', cursive, sans-serif;
-    background: #f2f7fa;
-    margin: 0;
-    padding: 0;
-    color: #333;
+    background: #ffe4c4;
+    margin: 0; padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
   header {
-    background: #e91e63;
+    background: #d35400;
+    width: 100%;
     color: white;
     padding: 20px;
-    text-align: center;
     font-size: 2em;
     font-weight: bold;
-    letter-spacing: 3px;
-  }
-  nav {
-    background: #03a9f4;
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    padding: 10px 0;
-  }
-  nav button {
-    background: #fff;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 12px;
-    font-size: 1.1em;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background-color 0.3s;
-  }
-  nav button:hover, nav button.active {
-    background: #ffeb3b;
-    color: #222;
+    text-align: center;
+    box-shadow: 0 4px 6px #b24300;
   }
   main {
-    max-width: 900px;
-    margin: 30px auto;
     background: white;
-    border-radius: 12px;
+    margin: 20px;
     padding: 20px;
-    box-shadow: 0 4px 10px rgb(0 0 0 / 0.1);
-  }
-  .game-area {
-    min-height: 400px;
-  }
-  /* Estilo jogo da memória */
-  .memory-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 100px);
-    grid-gap: 15px;
-    justify-content: center;
-  }
-  .card {
-    width: 100px;
-    height: 100px;
-    background: #03a9f4;
     border-radius: 15px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 50px;
-    color: white;
-    user-select: none;
-    box-shadow: 0 4px 7px rgb(0 0 0 / 0.2);
-    transition: transform 0.3s;
+    max-width: 600px;
+    width: 90%;
+    box-shadow: 0 6px 10px rgba(0,0,0,0.1);
   }
-  .card.flipped, .card.matched {
-    background: #ffeb3b;
-    color: #222;
-    cursor: default;
-    transform: rotateY(180deg);
-  }
-  /* Estilo jogo de montar peças */
-  .lego-pieces {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
+  .order, .build-area, .ingredients, .status {
     margin-bottom: 20px;
   }
-  .lego-piece {
-    width: 80px;
-    height: 80px;
-    background-color: #e91e63;
-    border-radius: 10px;
-    cursor: grab;
-    user-select: none;
-    box-shadow: 0 4px 7px rgb(0 0 0 / 0.2);
-    position: relative;
+  h2 {
+    margin-bottom: 10px;
   }
-  .lego-piece.blue { background-color: #2196f3; }
-  .lego-piece.yellow { background-color: #ffeb3b; }
-  .lego-piece.green { background-color: #4caf50; }
-  .lego-piece:active {
-    cursor: grabbing;
-  }
-  .lego-board {
-    width: 350px;
-    height: 200px;
-    border: 3px dashed #666;
-    margin: 0 auto;
-    border-radius: 15px;
-    position: relative;
-  }
-  /* Estilo jogo encaixar blocos */
-  .block-area {
+  .order-list {
     display: flex;
+    gap: 10px;
+  }
+  .ingredient-icon {
+    font-size: 2.5em;
+    user-select: none;
+  }
+  .order-ingredient {
+    font-size: 2em;
+  }
+  .build-area {
+    min-height: 120px;
+    background: #f7f7f7;
+    border: 2px dashed #d35400;
+    border-radius: 15px;
+    padding: 15px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
     justify-content: center;
+    color: #999;
+  }
+  .build-ingredient {
+    font-size: 3em;
+    cursor: pointer;
+    user-select: none;
+  }
+  .ingredients {
+    display: flex;
     gap: 15px;
+    justify-content: center;
   }
-  .block, .slot {
-    width: 100px;
-    height: 100px;
+  .ingredients div {
+    background: #f39c12;
     border-radius: 12px;
-    box-shadow: 0 4px 7px rgb(0 0 0 / 0.2);
+    padding: 10px;
+    cursor: pointer;
+    box-shadow: 0 4px 7px rgba(0,0,0,0.2);
+    transition: background-color 0.3s;
+    user-select: none;
   }
-  .block {
-    background-color: #ff5722;
-    cursor: grab;
+  .ingredients div:hover {
+    background: #f1c40f;
   }
-  .block.green { background-color: #4caf50; }
-  .block.blue { background-color: #2196f3; }
-  .block.yellow { background-color: #ffeb3b; color: #222; }
-  .slot {
-    border: 3px dashed #999;
+  button {
+    background: #d35400;
+    border: none;
+    color: white;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 1.1em;
+    box-shadow: 0 4px 6px #b24300;
+    transition: background-color 0.3s;
+  }
+  button:hover {
+    background: #e67e22;
+  }
+  .status {
+    font-weight: bold;
+    font-size: 1.3em;
+    min-height: 30px;
+    text-align: center;
+  }
+  .score {
+    text-align: right;
+    font-size: 1.3em;
+    margin-bottom: 10px;
+    color: #d35400;
+    font-weight: bold;
   }
 </style>
 </head>
 <body>
-<header>Jogos estilo Papa's Lego</header>
-<nav>
-  <button id="btn-memory" class="active">Jogo da Memória</button>
-  <button id="btn-montar">Montar Peças</button>
-  <button id="btn-encaixar">Encaixar Blocos</button>
-</nav>
+<header>Mini Jogo Papa Louie - Faça os Sanduíches!</header>
 <main>
-  <div id="game" class="game-area"></div>
+  <div class="score">Pontos: <span id="score">0</span></div>
+
+  <div class="order">
+    <h2>Pedido do Cliente:</h2>
+    <div id="orderList" class="order-list"></div>
+  </div>
+
+  <div class="build-area" id="buildArea" title="Clique nos ingredientes abaixo para montar o sanduíche">Nenhum ingrediente adicionado</div>
+
+  <div class="ingredients">
+    <div data-ingredient="pão" title="Pão">🍞</div>
+    <div data-ingredient="alface" title="Alface">🥬</div>
+    <div data-ingredient="queijo" title="Queijo">🧀</div>
+    <div data-ingredient="hambúrguer" title="Hambúrguer">🍔</div>
+    <div data-ingredient="tomate" title="Tomate">🍅</div>
+    <div data-ingredient="cebola" title="Cebola">🧅</div>
+  </div>
+
+  <div style="text-align:center; margin-top: 15px;">
+    <button id="serveBtn">Servir Sanduíche</button>
+    <button id="clearBtn" style="margin-left: 15px; background:#7f8c8d;">Limpar</button>
+  </div>
+
+  <div class="status" id="statusMsg"></div>
 </main>
 
 <script>
-  const gameArea = document.getElementById('game');
-  const btnMemory = document.getElementById('btn-memory');
-  const btnMontar = document.getElementById('btn-montar');
-  const btnEncaixar = document.getElementById('btn-encaixar');
+  const orders = [
+    ['pão','hambúrguer','queijo','pão'],
+    ['pão','hambúrguer','alface','tomate','pão'],
+    ['pão','queijo','hambúrguer','cebola','pão'],
+    ['pão','alface','tomate','queijo','hambúrguer','pão'],
+    ['pão','hambúrguer','queijo','cebola','tomate','pão']
+  ];
 
-  function setActiveButton(activeBtn) {
-    [btnMemory, btnMontar, btnEncaixar].forEach(btn => {
-      btn.classList.toggle('active', btn === activeBtn);
+  let currentOrderIndex = 0;
+  let currentBuild = [];
+  let score = 0;
+
+  const orderList = document.getElementById('orderList');
+  const buildArea = document.getElementById('buildArea');
+  const scoreEl = document.getElementById('score');
+  const statusMsg = document.getElementById('statusMsg');
+  const serveBtn = document.getElementById('serveBtn');
+  const clearBtn = document.getElementById('clearBtn');
+
+  // Função para mostrar o pedido atual
+  function showOrder() {
+    orderList.innerHTML = '';
+    const order = orders[currentOrderIndex];
+    order.forEach(item => {
+      const span = document.createElement('span');
+      span.className = 'order-ingredient';
+      span.textContent = ingredientEmoji(item);
+      span.title = capitalize(item);
+      orderList.appendChild(span);
     });
   }
 
-  // ----------------- Jogo da Memória -----------------
-  function memoryGame() {
-    gameArea.innerHTML = '';
-    setActiveButton(btnMemory);
-
-    const emojis = ['🟦','🟥','🟩','🟨','🟪','🟧','🟫','⬛'];
-    let cards = emojis.concat(emojis); // 16 cartas
-    cards = cards.sort(() => Math.random() - 0.5);
-
-    const grid = document.createElement('div');
-    grid.className = 'memory-grid';
-    gameArea.appendChild(grid);
-
-    let firstCard = null;
-    let lockBoard = false;
-    let matches = 0;
-
-    cards.forEach((emoji, i) => {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.dataset.emoji = emoji;
-      card.dataset.index = i;
-      card.textContent = '';
-      card.addEventListener('click', () => {
-        if(lockBoard || card.classList.contains('flipped') || card.classList.contains('matched')) return;
-
-        card.classList.add('flipped');
-        card.textContent = emoji;
-
-        if(!firstCard) {
-          firstCard = card;
-          return;
-        }
-
-        if(firstCard.dataset.emoji === card.dataset.emoji) {
-          firstCard.classList.add('matched');
-          card.classList.add('matched');
-          matches += 1;
-          firstCard = null;
-          if(matches === emojis.length) {
-            setTimeout(() => alert('Parabéns! Você completou o jogo da memória!'), 300);
-          }
-        } else {
-          lockBoard = true;
-          setTimeout(() => {
-            firstCard.classList.remove('flipped');
-            firstCard.textContent = '';
-            card.classList.remove('flipped');
-            card.textContent = '';
-            firstCard = null;
-            lockBoard = false;
-          }, 1000);
-        }
+  // Função para mostrar o sanduíche sendo montado
+  function showBuild() {
+    buildArea.innerHTML = '';
+    if(currentBuild.length === 0) {
+      buildArea.textContent = 'Nenhum ingrediente adicionado';
+      buildArea.style.color = '#999';
+      return;
+    }
+    buildArea.style.color = '#222';
+    currentBuild.forEach((item, index) => {
+      const span = document.createElement('span');
+      span.className = 'build-ingredient';
+      span.textContent = ingredientEmoji(item);
+      span.title = capitalize(item);
+      // Permite remover ingrediente clicando nele
+      span.addEventListener('click', () => {
+        removeIngredient(index);
       });
-      grid.appendChild(card);
+      buildArea.appendChild(span);
     });
   }
 
-  // ----------------- Jogo Montar Peças -----------------
-  function montarPecasGame() {
-    gameArea.innerHTML = '';
-    setActiveButton(btnMontar);
-
-    const instructions = document.createElement('p');
-    instructions.textContent = 'Arraste as peças coloridas para dentro da área pontilhada!';
-    instructions.style.textAlign = 'center';
-    instructions.style.fontWeight = 'bold';
-    instructions.style.marginBottom = '20px';
-    gameArea.appendChild(instructions);
-
-    const pieces = document.createElement('div');
-    pieces.className = 'lego-pieces';
-    gameArea.appendChild(pieces);
-
-    const colors = ['red', 'blue', 'yellow', 'green'];
-    colors.forEach(color => {
-      const piece = document.createElement('div');
-      piece.className = 'lego-piece ' + (color === 'red' ? '': color);
-      piece.draggable = true;
-      piece.style.backgroundColor = color === 'red' ? '#e91e63' : color;
-      piece.addEventListener('dragstart', dragStart);
-      pieces.appendChild(piece);
-    });
-
-    const board = document.createElement('div');
-    board.className = 'lego-board';
-    board.addEventListener('dragover', dragOver);
-    board.addEventListener('drop', dropPiece);
-    gameArea.appendChild(board);
-
-    function dragStart(e) {
-      e.dataTransfer.setData('text/plain', e.target.style.backgroundColor);
-    }
-    function dragOver(e) {
-      e.preventDefault();
-    }
-    function dropPiece(e) {
-      e.preventDefault();
-      const color = e.dataTransfer.getData('text/plain');
-      const piece = document.createElement('div');
-      piece.className = 'lego-piece';
-      piece.style.backgroundColor = color;
-      piece.style.position = 'absolute';
-
-      // Posiciona onde o usuário soltou a peça (dentro do board)
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left - 40; // centro da peça
-      const y = e.clientY - rect.top - 40;
-      piece.style.left = x + 'px';
-      piece.style.top = y + 'px';
-
-      // Permitir arrastar as peças já no tabuleiro
-      piece.draggable = true;
-      piece.addEventListener('dragstart', dragStartExisting);
-
-      e.currentTarget.appendChild(piece);
-    }
-    function dragStartExisting(e) {
-      const style = window.getComputedStyle(e.target);
-      e.dataTransfer.setData('text/plain', style.backgroundColor);
-      const rect = e.target.getBoundingClientRect();
-      e.dataTransfer.setData('offsetX', e.clientX - rect.left);
-      e.dataTransfer.setData('offsetY', e.clientY - rect.top);
-      e.dataTransfer.setDragImage(new Image(), 0, 0);
-      e.target.style.opacity = '0.5';
-    }
-
-    board.addEventListener('dragend', e => {
-      e.target.style.opacity = '1';
-    });
-  }
-
-  // ----------------- Jogo Encaixar Blocos -----------------
-  function encaixarBlocosGame() {
-    gameArea.innerHTML = '';
-    setActiveButton(btnEncaixar);
-
-    const instructions = document.createElement('p');
-    instructions.textContent = 'Arraste os blocos para os slots correspondentes!';
-    instructions.style.textAlign = 'center';
-    instructions.style.fontWeight = 'bold';
-    instructions.style.marginBottom = '20px';
-    gameArea.appendChild(instructions);
-
-    const blockArea = document.createElement('div');
-    blockArea.className = 'block-area';
-    gameArea.appendChild(blockArea);
-
-    // Slots
-    const slotColors = ['#4caf50', '#2196f3', '#ffeb3b'];
-    const slots = [];
-    slotColors.forEach(color => {
-      const slot = document.createElement('div');
-      slot.className = 'slot';
-      slot.style.backgroundColor = '#eee';
-      slot.dataset.color = color;
-      slot.addEventListener('dragover', dragOver);
-      slot.addEventListener('drop', dropBlock);
-      blockArea.appendChild(slot);
-      slots.push(slot);
-    });
-
-    // Blocos
-    const blocks = [
-      {color: 'green', hex:'#4caf50'},
-      {color: 'blue', hex:'#2196f3'},
-      {color: 'yellow', hex:'#ffeb3b'}
-    ];
-
-    blocks.forEach(b => {
-      const block = document.createElement('div');
-      block.className = 'block ' + b.color;
-      block.draggable = true;
-      block.dataset.color = b.hex;
-      block.textContent = '';
-      block.addEventListener('dragstart', dragStartBlock);
-      gameArea.appendChild(block);
-    });
-
-    function dragStartBlock(e) {
-      e.dataTransfer.setData('color', e.target.dataset.color);
-      e.dataTransfer.setData('id', e.target.className + Date.now());
-      e.target.style.opacity = '0.5';
-    }
-    function dragOver(e) {
-      e.preventDefault();
-    }
-    function dropBlock(e) {
-      e.preventDefault();
-      const color = e.dataTransfer.getData('color');
-      const blockColor = e.currentTarget.dataset.color;
-
-      if(color === blockColor) {
-        e.currentTarget.style.backgroundColor = color;
-        e.currentTarget.textContent = '✔';
-        e.currentTarget.style.color = '#222';
-        checkWin();
-      } else {
-        alert('Bloco errado! Tente novamente.');
-      }
-      // Voltar a opacidade do bloco
-      const blocks = document.querySelectorAll('.block');
-      blocks.forEach(b => b.style.opacity = '1');
-    }
-
-    function checkWin() {
-      const allCorrect = slots.every(s => s.textContent === '✔');
-      if(allCorrect) {
-        setTimeout(() => alert('Parabéns! Você encaixou todos os blocos!'), 200);
-      }
+  // Converte nome do ingrediente para emoji
+  function ingredientEmoji(name) {
+    switch(name) {
+      case 'pão': return '🍞';
+      case 'hambúrguer': return '🍔';
+      case 'queijo': return '🧀';
+      case 'alface': return '🥬';
+      case 'tomate': return '🍅';
+      case 'cebola': return '🧅';
+      default: return '?';
     }
   }
 
-  // Iniciar com jogo da memória
-  memoryGame();
+  // Capitaliza primeira letra
+  function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
 
-  // Botões para trocar de jogo
-  btnMemory.addEventListener('click', memoryGame);
-  btnMontar.addEventListener('click', montarPecasGame);
-  btnEncaixar.addEventListener('click', encaixarBlocosGame);
+  // Adiciona ingrediente ao sanduíche
+  document.querySelectorAll('.ingredients div').forEach(div => {
+    div.addEventListener('click', () => {
+      currentBuild.push(div.dataset.ingredient);
+      showBuild();
+      statusMsg.textContent = '';
+    });
+  });
+
+  // Remove ingrediente pelo índice (clicando no ingrediente montado)
+  function removeIngredient(index) {
+    currentBuild.splice(index, 1);
+    showBuild();
+  }
+
+  // Botão limpar
+  clearBtn.addEventListener('click', () => {
+    currentBuild = [];
+    showBuild();
+    statusMsg.textContent = '';
+  });
+
+  // Verifica se o sanduíche montado bate com o pedido
+  function checkOrder() {
+    const order = orders[currentOrderIndex];
+    if(order.length !== currentBuild.length) return false;
+
+    for(let i = 0; i < order.length; i++) {
+      if(order[i] !== currentBuild[i]) return false;
+    }
+    return true;
+  }
+
+  // Serve o sanduíche
+  serveBtn.addEventListener('click', () => {
+    if(currentBuild.length === 0) {
+      statusMsg.textContent = 'Adicione ingredientes antes de servir!';
+      return;
+    }
+
+    if(checkOrder()) {
+      score += 10;
+      statusMsg.style.color = 'green';
+      statusMsg.textContent = 'Pedido correto! +10 pontos';
+      currentOrderIndex = (currentOrderIndex + 1) % orders.length;
+      currentBuild = [];
+      showOrder();
+      showBuild();
+      scoreEl.textContent = score;
+    } else {
+      statusMsg.style.color = 'red';
+      statusMsg.textContent = 'Pedido incorreto, tente novamente!';
+    }
+  });
+
+  // Inicializa o jogo
+  showOrder();
+  showBuild();
 </script>
 </body>
 </html>
