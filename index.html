@@ -3,175 +3,317 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Jogo Labirinto estilo Friv</title>
+<title>UNO Simplificado</title>
 <style>
-  body {
-    background: #222;
-    margin: 0; 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    user-select: none;
-    font-family: Arial, sans-serif;
+  body { font-family: Arial, sans-serif; background: #222; color: #eee; text-align: center; }
+  #mesa { margin: 20px auto; padding: 10px; border: 2px solid #fff; width: 200px; font-size: 1.2em; }
+  #mao { margin-top: 20px; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
+  .carta {
+    padding: 12px 18px; border-radius: 8px; cursor: pointer;
+    user-select: none; font-weight: bold; min-width: 60px;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    transition: transform 0.2s;
   }
-  #game {
-    position: relative;
-    width: 400px;
-    height: 400px;
-    background: #eee;
-    border: 5px solid #444;
-  }
-  .wall {
-    position: absolute;
-    background: #333;
-  }
-  #player {
-    position: absolute;
-    width: 30px;
-    height: 30px;
-    background: #3498db;
-    border-radius: 6px;
-    transition: left 0.1s, top 0.1s;
-  }
-  #exit {
-    position: absolute;
-    width: 30px;
-    height: 30px;
-    background: #2ecc71;
-    border-radius: 6px;
-  }
-  #message {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 2em;
-    color: #27ae60;
-    display: none;
-  }
+  .carta:hover { transform: scale(1.1); }
+  .Vermelho { background-color: #e74c3c; }
+  .Verde { background-color: #27ae60; }
+  .Azul { background-color: #2980b9; }
+  .Amarelo { background-color: #f1c40f; color: black; }
+  .Coringa { background: linear-gradient(45deg, #000, #555); }
+  button { margin-top: 20px; padding: 10px 20px; font-size: 1em; }
+  #info { margin-top: 10px; font-size: 1.1em; }
 </style>
 </head>
 <body>
-  <div id="game" tabindex="0">
-    <div id="player"></div>
-    <div id="exit"></div>
-    <div id="message">Você Venceu!</div>
-  </div>
+
+<h1>UNO Simplificado (até 8 jogadores)</h1>
+
+<div>
+  <label>Jogadores: 
+    <select id="numJogadores">
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4" selected>4</option>
+      <option value="5">5</option>
+      <option value="6">6</option>
+      <option value="7">7</option>
+      <option value="8">8</option>
+    </select>
+  </label>
+  <button id="startBtn">Começar Jogo</button>
+</div>
+
+<div id="mesa" style="display:none;">
+  <div>Carta na mesa:</div>
+  <div id="cartaMesa"></div>
+  <div id="info"></div>
+</div>
+
+<div id="turno" style="margin-top:15px; font-size:1.2em;"></div>
+
+<div id="mao"></div>
+
+<button id="comprarBtn" style="display:none;">Comprar Carta</button>
 
 <script>
-  const game = document.getElementById('game');
-  const player = document.getElementById('player');
-  const exit = document.getElementById('exit');
-  const message = document.getElementById('message');
+(() => {
+  const cores = ['Vermelho', 'Verde', 'Azul', 'Amarelo'];
+  const numeros = Array.from({length: 10}, (_, i) => i);
+  const acoes = ['Pular', 'Inverter', '+2'];
+  const coringas = ['Coringa', '+4'];
 
-  const size = 30; // tamanho do player e bloco (px)
-  const step = size; // movimento em passos de 30px
+  let baralho = [];
+  let maos = [];
+  let mesa = null;
+  let jogadorAtual = 0;
+  let direcao = 1;
+  let numJogadores = 4;
+  let esperandoCompra = false;
 
-  // Posições iniciais
-  let playerPos = {x: 0, y: 0};
-  const exitPos = {x: 370, y: 370}; // perto do canto inferior direito
+  const cartaMesaDiv = document.getElementById('cartaMesa');
+  const maoDiv = document.getElementById('mao');
+  const turnoDiv = document.getElementById('turno');
+  const infoDiv = document.getElementById('info');
+  const comprarBtn = document.getElementById('comprarBtn');
+  const startBtn = document.getElementById('startBtn');
+  const numJogadoresSelect = document.getElementById('numJogadores');
 
-  // Definição das paredes (x, y, largura, altura)
-  const wallsData = [
-    {x: 0, y: 0, width: 400, height: 10},   // topo
-    {x: 0, y: 390, width: 400, height: 10}, // base
-    {x: 0, y: 0, width: 10, height: 400},   // esquerda
-    {x: 390, y: 0, width: 10, height: 400}, // direita
-
-    // paredes internas
-    {x: 60, y: 0, width: 10, height: 300},
-    {x: 120, y: 100, width: 200, height: 10},
-    {x: 320, y: 100, width: 10, height: 300},
-    {x: 180, y: 200, width: 10, height: 200},
-    {x: 240, y: 0, width: 10, height: 200},
-    {x: 240, y: 300, width: 80, height: 10},
-  ];
-
-  // Cria paredes no DOM
-  wallsData.forEach(w => {
-    const wall = document.createElement('div');
-    wall.classList.add('wall');
-    wall.style.left = w.x + 'px';
-    wall.style.top = w.y + 'px';
-    wall.style.width = w.width + 'px';
-    wall.style.height = w.height + 'px';
-    game.appendChild(wall);
-  });
-
-  // Posiciona player e saída
-  function updatePositions() {
-    player.style.left = playerPos.x + 'px';
-    player.style.top = playerPos.y + 'px';
-
-    exit.style.left = exitPos.x + 'px';
-    exit.style.top = exitPos.y + 'px';
-  }
-
-  updatePositions();
-
-  // Função para checar colisão entre player e paredes
-  function isColliding(newX, newY) {
-    const playerRect = {x: newX, y: newY, width: size, height: size};
-    const walls = document.querySelectorAll('.wall');
-    for(let wall of walls) {
-      const rect = {
-        x: parseInt(wall.style.left),
-        y: parseInt(wall.style.top),
-        width: parseInt(wall.style.width),
-        height: parseInt(wall.style.height),
-      };
-      if(rectanglesOverlap(playerRect, rect)) {
-        return true;
+  function criarBaralho() {
+    let baralho = [];
+    for (const cor of cores) {
+      baralho.push({cor, valor: 0});
+      for (let n = 1; n <= 9; n++) {
+        baralho.push({cor, valor: n});
+        baralho.push({cor, valor: n});
+      }
+      for (const acao of acoes) {
+        baralho.push({cor, valor: acao});
+        baralho.push({cor, valor: acao});
       }
     }
-    return false;
+    for (let i=0; i<4; i++) {
+      baralho.push({cor: 'Coringa', valor: 'Coringa'});
+      baralho.push({cor: 'Coringa', valor: '+4'});
+    }
+    return baralho.sort(() => Math.random() - 0.5);
   }
 
-  // Checa se dois retângulos se sobrepõem
-  function rectanglesOverlap(r1, r2) {
-    return !(r2.x >= r1.x + r1.width || 
-             r2.x + r2.width <= r1.x || 
-             r2.y >= r1.y + r1.height ||
-             r2.y + r2.height <= r1.y);
+  function mostrarCarta(carta) {
+    if (!carta) return '';
+    return carta.valor + (carta.cor !== 'Coringa' ? ' de ' + carta.cor : '');
   }
 
-  // Movimento do jogador
-  window.addEventListener('keydown', e => {
-    if(message.style.display === 'block') return; // jogo acabado
+  function podeJogar(carta, mesa) {
+    if (!mesa) return true;
+    return (
+      carta.cor === mesa.cor ||
+      carta.valor === mesa.valor ||
+      carta.cor === 'Coringa'
+    );
+  }
 
-    let newX = playerPos.x;
-    let newY = playerPos.y;
+  function atualizarMesa() {
+    cartaMesaDiv.textContent = mostrarCarta(mesa);
+    cartaMesaDiv.className = mesa.cor;
+  }
 
-    switch(e.key) {
-      case 'ArrowUp': newY -= step; break;
-      case 'ArrowDown': newY += step; break;
-      case 'ArrowLeft': newX -= step; break;
-      case 'ArrowRight': newX += step; break;
-      default: return;
+  function atualizarMao() {
+    maoDiv.innerHTML = '';
+    const mao = maos[jogadorAtual];
+    mao.forEach((carta, idx) => {
+      const div = document.createElement('div');
+      div.className = 'carta ' + carta.cor;
+      div.textContent = carta.valor;
+      div.title = mostrarCarta(carta);
+      div.onclick = () => jogarCarta(idx);
+      if (!podeJogar(carta, mesa) || esperandoCompra) {
+        div.style.opacity = '0.4';
+        div.onclick = null;
+      }
+      maoDiv.appendChild(div);
+    });
+  }
+
+  function atualizarTurno() {
+    turnoDiv.textContent = `Turno do Jogador ${jogadorAtual + 1}`;
+  }
+
+  function proximoJogador() {
+    jogadorAtual = (jogadorAtual + direcao + numJogadores) % numJogadores;
+  }
+
+  function escolherCor(callback) {
+    infoDiv.innerHTML = 'Escolha uma cor: ';
+    cores.forEach((cor, i) => {
+      const btn = document.createElement('button');
+      btn.textContent = cor;
+      btn.style.backgroundColor = cor.toLowerCase();
+      btn.style.color = (cor === 'Amarelo') ? 'black' : 'white';
+      btn.onclick = () => {
+        infoDiv.textContent = '';
+        callback(cor);
+      };
+      infoDiv.appendChild(btn);
+    });
+  }
+
+  function comprarCarta() {
+    if (baralho.length === 0) {
+      alert('Baralho vazio! Passando a vez.');
+      esperandoCompra = false;
+      proximoJogador();
+      turno();
+      return;
     }
-
-    // Evita mover fora da área
-    if(newX < 0 || newY < 0 || newX > 400 - size || newY > 400 - size) return;
-
-    // Checa colisão
-    if(!isColliding(newX, newY)) {
-      playerPos.x = newX;
-      playerPos.y = newY;
-      updatePositions();
-      checkWin();
-    }
-  });
-
-  // Verifica vitória
-  function checkWin() {
-    if(playerPos.x === exitPos.x && playerPos.y === exitPos.y) {
-      message.style.display = 'block';
+    const carta = baralho.pop();
+    maos[jogadorAtual].push(carta);
+    alert(`Você comprou: ${mostrarCarta(carta)}`);
+    esperandoCompra = false;
+    atualizarMao();
+    // Se puder jogar a carta comprada, deixa jogar, senão passa a vez
+    if (podeJogar(carta, mesa)) {
+      infoDiv.textContent = 'Você pode jogar a carta comprada!';
+    } else {
+      proximoJogador();
+      turno();
     }
   }
 
-  // Foco no game para capturar teclado
-  game.focus();
+  function jogarCarta(idx) {
+    if (esperandoCompra) return;
+    const mao = maos[jogadorAtual];
+    const carta = mao[idx];
+    if (!podeJogar(carta, mesa)) return;
+
+    // Remove a carta da mão e joga na mesa
+    mao.splice(idx, 1);
+    mesa = carta;
+    atualizarMesa();
+    atualizarMao();
+
+    // Verifica vitória
+    if (mao.length === 0) {
+      alert(`Jogador ${jogadorAtual + 1} venceu!`);
+      resetarJogo();
+      return;
+    }
+
+    // Aplica efeitos das cartas especiais
+    if (carta.valor === 'Pular') {
+      infoDiv.textContent = `Jogador ${(jogadorAtual + direcao + numJogadores) % numJogadores + 1} foi pulado!`;
+      proximoJogador();
+      proximoJogador();
+    } else if (carta.valor === 'Inverter') {
+      direcao *= -1;
+      infoDiv.textContent = 'Direção invertida!';
+      proximoJogador();
+    } else if (carta.valor === '+2') {
+      const alvo = (jogadorAtual + direcao + numJogadores) % numJogadores;
+      for (let i=0; i<2; i++) {
+        if (baralho.length === 0) break;
+        maos[alvo].push(baralho.pop());
+      }
+      infoDiv.textContent = `Jogador ${alvo + 1} comprou 2 cartas!`;
+      proximoJogador();
+      proximoJogador();
+    } else if (carta.valor === '+4') {
+      escolherCor(corEscolhida => {
+        mesa.cor = corEscolhida;
+        atualizarMesa();
+        const alvo = (jogadorAtual + direcao + numJogadores) % numJogadores;
+        for (let i=0; i<4; i++) {
+          if (baralho.length === 0) break;
+          maos[alvo].push(baralho.pop());
+        }
+        infoDiv.textContent = `Jogador ${alvo + 1} comprou 4 cartas! Cor escolhida: ${corEscolhida}`;
+        proximoJogador();
+        proximoJogador();
+        atualizarMao();
+        atualizarTurno();
+      });
+      return; // Espera escolha de cor
+    } else if (carta.valor === 'Coringa') {
+      escolherCor(corEscolhida => {
+        mesa.cor = corEscolhida;
+        atualizarMesa();
+        infoDiv.textContent = `Cor escolhida: ${corEscolhida}`;
+        proximoJogador();
+        atualizarTurno();
+        atualizarMao();
+      });
+      return; // Espera escolha de cor
+    } else {
+      proximoJogador();
+    }
+
+    infoDiv.textContent = '';
+    atualizarTurno();
+    atualizarMao();
+  }
+
+  function turno() {
+    atualizarTurno();
+    atualizarMesa();
+    atualizarMao();
+    esperandoCompra = false;
+    comprarBtn.style.display = 'inline-block';
+  }
+
+  comprarBtn.onclick = () => {
+    if (!esperandoCompra) {
+      esperandoCompra = true;
+      comprarCarta();
+      comprarBtn.style.display = 'none';
+    }
+  };
+
+  function resetarJogo() {
+    baralho = [];
+    maos = [];
+    mesa = null;
+    jogadorAtual = 0;
+    direcao = 1;
+    esperandoCompra = false;
+    comprarBtn.style.display = 'none';
+    infoDiv.textContent = '';
+    cartaMesaDiv.textContent = '';
+    maoDiv.innerHTML = '';
+    turnoDiv.textContent = '';
+    document.getElementById('mesa').style.display = 'none';
+  }
+
+  startBtn.onclick = () => {
+    resetarJogo();
+    numJogadores = parseInt(numJogadoresSelect.value);
+    baralho = criarBaralho();
+    maos = Array.from({length: numJogadores}, () => []);
+
+    // Distribuir 7 cartas para cada jogador
+    for (let i=0; i<7; i++) {
+      for (let j=0; j<numJogadores; j++) {
+        maos[j].push(baralho.pop());
+      }
+    }
+
+    // Carta inicial
+    do {
+      mesa = baralho.pop();
+    } while(mesa.cor === 'Coringa');
+
+    document.getElementById('mesa').style.display = 'block';
+    infoDiv.textContent = '';
+    jogadorAtual = 0;
+    direcao = 1;
+
+    atualizarMesa();
+    atualizarTurno();
+    atualizarMao();
+    comprarBtn.style.display = 'inline-block';
+  };
+
+})();
 </script>
+
 </body>
 </html>
