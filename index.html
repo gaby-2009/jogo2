@@ -3,49 +3,104 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>UNO Simplificado</title>
+<title>UNO com Bots</title>
 <style>
-  body { font-family: Arial, sans-serif; background: #222; color: #eee; text-align: center; }
-  #mesa { margin: 20px auto; padding: 10px; border: 2px solid #fff; width: 200px; font-size: 1.2em; }
-  #mao { margin-top: 20px; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
-  .carta {
-    padding: 12px 18px; border-radius: 8px; cursor: pointer;
-    user-select: none; font-weight: bold; min-width: 60px;
-    color: white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-    transition: transform 0.2s;
+  body { font-family: Arial, sans-serif; background: #222; color: #eee; text-align: center; margin: 0; padding: 0; }
+  h1 { margin-top: 20px; }
+  #mesa {
+    margin: 20px auto; padding: 15px; border: 3px solid #fff; width: 250px;
+    font-size: 1.3em; border-radius: 12px; background: #111;
   }
-  .carta:hover { transform: scale(1.1); }
+  #cartaMesa {
+    margin-top: 10px; padding: 25px; border-radius: 15px;
+    font-weight: bold; font-size: 1.4em; user-select: none;
+    box-shadow: 0 0 15px 3px rgba(255,255,255,0.6);
+  }
+  #mao {
+    margin: 20px auto; display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; max-width: 900px;
+  }
+  .carta {
+    padding: 20px 28px; border-radius: 15px; cursor: pointer;
+    user-select: none; font-weight: bold; font-size: 1.3em;
+    color: white;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.8);
+    transition: transform 0.2s, box-shadow 0.2s;
+    min-width: 70px; text-align: center;
+    user-select:none;
+  }
+  .carta:hover {
+    transform: scale(1.15);
+    box-shadow: 0 6px 14px rgba(255,255,255,0.8);
+  }
   .Vermelho { background-color: #e74c3c; }
   .Verde { background-color: #27ae60; }
   .Azul { background-color: #2980b9; }
   .Amarelo { background-color: #f1c40f; color: black; }
-  .Coringa { background: linear-gradient(45deg, #000, #555); }
-  button { margin-top: 20px; padding: 10px 20px; font-size: 1em; }
-  #info { margin-top: 10px; font-size: 1.1em; }
+  .Coringa {
+    background: linear-gradient(45deg, #000, #555);
+    color: white;
+  }
+  button {
+    margin-top: 20px; padding: 12px 30px; font-size: 1.2em;
+    cursor: pointer; border-radius: 8px; border: none; background: #3498db; color: white;
+    transition: background-color 0.3s;
+  }
+  button:hover {
+    background: #2980b9;
+  }
+  #info {
+    margin-top: 15px; font-size: 1.1em; min-height: 40px;
+  }
+  #config {
+    margin: 20px auto; max-width: 350px; background: #111; padding: 20px;
+    border-radius: 12px; border: 2px solid #444;
+  }
+  label {
+    display: block; margin: 10px 0 6px 0; font-weight: bold; font-size: 1.1em;
+  }
+  select, input[type=number] {
+    width: 60px; padding: 6px; font-size: 1em; border-radius: 6px; border: 1px solid #555;
+    background: #333; color: white; text-align: center;
+  }
 </style>
 </head>
 <body>
 
-<h1>UNO Simplificado (até 8 jogadores)</h1>
+<h1>UNO Simplificado com Bots</h1>
 
-<div>
-  <label>Jogadores: 
-    <select id="numJogadores">
-      <option value="2">2</option>
-      <option value="3">3</option>
-      <option value="4" selected>4</option>
-      <option value="5">5</option>
-      <option value="6">6</option>
-      <option value="7">7</option>
-      <option value="8">8</option>
-    </select>
-  </label>
+<div id="config">
+  <label for="numHumanos">Número de jogadores humanos:</label>
+  <select id="numHumanos">
+    <option value="1" selected>1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+    <option value="5">5</option>
+    <option value="6">6</option>
+    <option value="7">7</option>
+    <option value="8">8</option>
+  </select>
+
+  <label for="numBots">Número de bots:</label>
+  <select id="numBots">
+    <option value="0" selected>0</option>
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+    <option value="5">5</option>
+    <option value="6">6</option>
+    <option value="7">7</option>
+  </select>
+
   <button id="startBtn">Começar Jogo</button>
+  <div style="margin-top:10px; font-size: 0.9em; color: #bbb;">
+    * Total jogadores deve ser entre 2 e 8.
+  </div>
 </div>
 
 <div id="mesa" style="display:none;">
-  <div>Carta na mesa:</div>
+  <div><strong>Carta na mesa:</strong></div>
   <div id="cartaMesa"></div>
   <div id="info"></div>
 </div>
@@ -69,6 +124,8 @@
   let jogadorAtual = 0;
   let direcao = 1;
   let numJogadores = 4;
+  let humanos = 1;
+  let bots = 3;
   let esperandoCompra = false;
 
   const cartaMesaDiv = document.getElementById('cartaMesa');
@@ -77,7 +134,10 @@
   const infoDiv = document.getElementById('info');
   const comprarBtn = document.getElementById('comprarBtn');
   const startBtn = document.getElementById('startBtn');
-  const numJogadoresSelect = document.getElementById('numJogadores');
+  const numHumanosSelect = document.getElementById('numHumanos');
+  const numBotsSelect = document.getElementById('numBots');
+  const mesaDiv = document.getElementById('mesa');
+  const configDiv = document.getElementById('config');
 
   function criarBaralho() {
     let baralho = [];
@@ -121,22 +181,26 @@
   function atualizarMao() {
     maoDiv.innerHTML = '';
     const mao = maos[jogadorAtual];
+    const jogadorEhHumano = jogadorAtual < humanos;
     mao.forEach((carta, idx) => {
       const div = document.createElement('div');
       div.className = 'carta ' + carta.cor;
       div.textContent = carta.valor;
       div.title = mostrarCarta(carta);
-      div.onclick = () => jogarCarta(idx);
-      if (!podeJogar(carta, mesa) || esperandoCompra) {
-        div.style.opacity = '0.4';
-        div.onclick = null;
+      if (jogadorEhHumano && podeJogar(carta, mesa) && !esperandoCompra) {
+        div.onclick = () => jogarCarta(idx);
+      } else {
+        div.style.opacity = '0.5';
       }
       maoDiv.appendChild(div);
     });
+
+    comprarBtn.style.display = jogadorEhHumano && !esperandoCompra ? 'inline-block' : 'none';
   }
 
   function atualizarTurno() {
-    turnoDiv.textContent = `Turno do Jogador ${jogadorAtual + 1}`;
+    const tipoJogador = jogadorAtual < humanos ? 'Humano' : 'Bot';
+    turnoDiv.textContent = `Turno do Jogador ${jogadorAtual + 1} (${tipoJogador})`;
   }
 
   function proximoJogador() {
@@ -145,11 +209,12 @@
 
   function escolherCor(callback) {
     infoDiv.innerHTML = 'Escolha uma cor: ';
-    cores.forEach((cor, i) => {
+    cores.forEach((cor) => {
       const btn = document.createElement('button');
       btn.textContent = cor;
       btn.style.backgroundColor = cor.toLowerCase();
       btn.style.color = (cor === 'Amarelo') ? 'black' : 'white';
+      btn.style.margin = '0 5px';
       btn.onclick = () => {
         infoDiv.textContent = '';
         callback(cor);
@@ -186,132 +251,237 @@
     const carta = mao[idx];
     if (!podeJogar(carta, mesa)) return;
 
-    // Remove a carta da mão e joga na mesa
     mao.splice(idx, 1);
     mesa = carta;
     atualizarMesa();
     atualizarMao();
 
-    // Verifica vitória
     if (mao.length === 0) {
       alert(`Jogador ${jogadorAtual + 1} venceu!`);
       resetarJogo();
       return;
     }
 
-    // Aplica efeitos das cartas especiais
+    aplicarEfeitoCarta(carta);
+  }
+
+  function aplicarEfeitoCarta(carta) {
     if (carta.valor === 'Pular') {
       infoDiv.textContent = `Jogador ${(jogadorAtual + direcao + numJogadores) % numJogadores + 1} foi pulado!`;
       proximoJogador();
       proximoJogador();
+      atualizarTurno();
+      turno();
     } else if (carta.valor === 'Inverter') {
       direcao *= -1;
       infoDiv.textContent = 'Direção invertida!';
       proximoJogador();
+      atualizarTurno();
+      turno();
     } else if (carta.valor === '+2') {
       const alvo = (jogadorAtual + direcao + numJogadores) % numJogadores;
-      for (let i=0; i<2; i++) {
+      infoDiv.textContent = `Jogador ${alvo + 1} compra 2 cartas e perde a vez!`;
+      for (let i = 0; i < 2; i++) {
         if (baralho.length === 0) break;
         maos[alvo].push(baralho.pop());
       }
-      infoDiv.textContent = `Jogador ${alvo + 1} comprou 2 cartas!`;
       proximoJogador();
       proximoJogador();
-    } else if (carta.valor === '+4') {
-      escolherCor(corEscolhida => {
-        mesa.cor = corEscolhida;
-        atualizarMesa();
-        const alvo = (jogadorAtual + direcao + numJogadores) % numJogadores;
-        for (let i=0; i<4; i++) {
-          if (baralho.length === 0) break;
-          maos[alvo].push(baralho.pop());
-        }
-        infoDiv.textContent = `Jogador ${alvo + 1} comprou 4 cartas! Cor escolhida: ${corEscolhida}`;
-        proximoJogador();
-        proximoJogador();
-        atualizarMao();
-        atualizarTurno();
-      });
-      return; // Espera escolha de cor
+      atualizarTurno();
+      turno();
     } else if (carta.valor === 'Coringa') {
-      escolherCor(corEscolhida => {
+      if (jogadorAtual < humanos) {
+        escolherCor((cor) => {
+          mesa.cor = cor;
+          atualizarMesa();
+          proximoJogador();
+          atualizarTurno();
+          turno();
+        });
+      } else {
+        // Bot escolhe cor com base na maior cor da mão
+        const contagem = {};
+        for (const c of maos[jogadorAtual]) {
+          if (c.cor !== 'Coringa') contagem[c.cor] = (contagem[c.cor] || 0) + 1;
+        }
+        let corEscolhida = 'Vermelho';
+        let max = 0;
+        for (const c in contagem) {
+          if (contagem[c] > max) {
+            max = contagem[c];
+            corEscolhida = c;
+          }
+        }
         mesa.cor = corEscolhida;
+        infoDiv.textContent = `Bot escolheu a cor ${corEscolhida}`;
         atualizarMesa();
-        infoDiv.textContent = `Cor escolhida: ${corEscolhida}`;
         proximoJogador();
         atualizarTurno();
-        atualizarMao();
-      });
-      return; // Espera escolha de cor
+        turno();
+      }
+    } else if (carta.valor === '+4') {
+      const alvo = (jogadorAtual + direcao + numJogadores) % numJogadores;
+      for (let i = 0; i < 4; i++) {
+        if (baralho.length === 0) break;
+        maos[alvo].push(baralho.pop());
+      }
+      if (jogadorAtual < humanos) {
+        escolherCor((cor) => {
+          mesa.cor = cor;
+          atualizarMesa();
+          infoDiv.textContent = `Jogador ${alvo + 1} compra 4 cartas e perde a vez!`;
+          proximoJogador();
+          proximoJogador();
+          atualizarTurno();
+          turno();
+        });
+      } else {
+        // Bot escolhe cor igual Coringa normal
+        const contagem = {};
+        for (const c of maos[jogadorAtual]) {
+          if (c.cor !== 'Coringa') contagem[c.cor] = (contagem[c.cor] || 0) + 1;
+        }
+        let corEscolhida = 'Vermelho';
+        let max = 0;
+        for (const c in contagem) {
+          if (contagem[c] > max) {
+            max = contagem[c];
+            corEscolhida = c;
+          }
+        }
+        mesa.cor = corEscolhida;
+        infoDiv.textContent = `Bot escolheu a cor ${corEscolhida}. Jogador ${alvo + 1} compra 4 cartas e perde a vez!`;
+        atualizarMesa();
+        proximoJogador();
+        proximoJogador();
+        atualizarTurno();
+        turno();
+      }
     } else {
       proximoJogador();
+      atualizarTurno();
+      turno();
     }
-
-    infoDiv.textContent = '';
-    atualizarTurno();
-    atualizarMao();
   }
 
   function turno() {
     atualizarTurno();
-    atualizarMesa();
     atualizarMao();
-    esperandoCompra = false;
-    comprarBtn.style.display = 'inline-block';
+    if (jogadorAtual >= humanos) {
+      esperar(800).then(() => {
+        jogarBot();
+      });
+    }
+  }
+
+  async function esperar(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function jogarBot() {
+    const mao = maos[jogadorAtual];
+    // Bot tenta jogar a primeira carta que pode jogar
+    const idx = mao.findIndex(carta => podeJogar(carta, mesa));
+    if (idx >= 0) {
+      const carta = mao[idx];
+      maos[jogadorAtual].splice(idx, 1);
+      mesa = carta;
+      infoDiv.textContent = `Bot Jogador ${jogadorAtual + 1} jogou ${mostrarCarta(carta)}`;
+      atualizarMesa();
+      atualizarMao();
+      if (maos[jogadorAtual].length === 0) {
+        alert(`Bot Jogador ${jogadorAtual + 1} venceu!`);
+        resetarJogo();
+        return;
+      }
+      aplicarEfeitoCarta(carta);
+    } else {
+      // Bot compra uma carta e tenta jogar ela se possível
+      if (baralho.length === 0) {
+        infoDiv.textContent = 'Baralho vazio, bot passa a vez.';
+        proximoJogador();
+        turno();
+        return;
+      }
+      const carta = baralho.pop();
+      maos[jogadorAtual].push(carta);
+      infoDiv.textContent = `Bot Jogador ${jogadorAtual + 1} comprou uma carta.`;
+      atualizarMao();
+
+      if (podeJogar(carta, mesa)) {
+        esperar(1000).then(() => {
+          const idxNova = maos[jogadorAtual].findIndex(c => c === carta);
+          if (idxNova >= 0) {
+            maos[jogadorAtual].splice(idxNova, 1);
+            mesa = carta;
+            infoDiv.textContent = `Bot Jogador ${jogadorAtual + 1} jogou ${mostrarCarta(carta)}`;
+            atualizarMesa();
+            atualizarMao();
+            if (maos[jogadorAtual].length === 0) {
+              alert(`Bot Jogador ${jogadorAtual + 1} venceu!`);
+              resetarJogo();
+              return;
+            }
+            aplicarEfeitoCarta(carta);
+          }
+        });
+      } else {
+        proximoJogador();
+        turno();
+      }
+    }
+  }
+
+  function resetarJogo() {
+    alert('Recarregue a página para jogar novamente.');
+    // Alternativamente, pode reiniciar tudo aqui
+    location.reload();
   }
 
   comprarBtn.onclick = () => {
-    if (!esperandoCompra) {
-      esperandoCompra = true;
-      comprarCarta();
-      comprarBtn.style.display = 'none';
-    }
+    if (esperandoCompra) return;
+    esperandoCompra = true;
+    comprarCarta();
   };
 
-  function resetarJogo() {
-    baralho = [];
-    maos = [];
-    mesa = null;
-    jogadorAtual = 0;
-    direcao = 1;
-    esperandoCompra = false;
-    comprarBtn.style.display = 'none';
-    infoDiv.textContent = '';
-    cartaMesaDiv.textContent = '';
-    maoDiv.innerHTML = '';
-    turnoDiv.textContent = '';
-    document.getElementById('mesa').style.display = 'none';
-  }
-
   startBtn.onclick = () => {
-    resetarJogo();
-    numJogadores = parseInt(numJogadoresSelect.value);
-    baralho = criarBaralho();
-    maos = Array.from({length: numJogadores}, () => []);
+    humanos = parseInt(numHumanosSelect.value);
+    bots = parseInt(numBotsSelect.value);
+    numJogadores = humanos + bots;
+    if (numJogadores < 2 || numJogadores > 8) {
+      alert('O total de jogadores deve ser entre 2 e 8.');
+      return;
+    }
 
-    // Distribuir 7 cartas para cada jogador
-    for (let i=0; i<7; i++) {
-      for (let j=0; j<numJogadores; j++) {
+    configDiv.style.display = 'none';
+    mesaDiv.style.display = 'block';
+
+    baralho = criarBaralho();
+
+    maos = [];
+    for (let i = 0; i < numJogadores; i++) {
+      maos.push([]);
+    }
+
+    // Distribui 7 cartas para cada jogador
+    for (let i = 0; i < 7; i++) {
+      for (let j = 0; j < numJogadores; j++) {
         maos[j].push(baralho.pop());
       }
     }
 
-    // Carta inicial
+    // Pega a carta inicial da mesa (que não pode ser coringa)
     do {
       mesa = baralho.pop();
-    } while(mesa.cor === 'Coringa');
-
-    document.getElementById('mesa').style.display = 'block';
-    infoDiv.textContent = '';
-    jogadorAtual = 0;
-    direcao = 1;
+    } while (mesa.cor === 'Coringa');
 
     atualizarMesa();
-    atualizarTurno();
-    atualizarMao();
-    comprarBtn.style.display = 'inline-block';
+    jogadorAtual = 0;
+    direcao = 1;
+    infoDiv.textContent = '';
+    esperandoCompra = false;
+    turno();
   };
-
 })();
 </script>
 
