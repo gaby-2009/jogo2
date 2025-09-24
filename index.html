@@ -12,7 +12,7 @@
     font-size: 1.4em; border-radius: 15px; background: #34495e;
     box-shadow: 0 0 20px rgba(0,0,0,0.5);
     position: relative;
-    height: 150px; /* Adicionado para permitir animação de cartas */
+    height: 150px;
   }
   #cartaMesa {
     margin-top: 15px; padding: 30px; border-radius: 18px;
@@ -129,6 +129,7 @@
 
 <button id="comprarBtn" style="display:none;">Comprar Carta</button>
 <button id="unoBtn" style="display:none;">UNO!</button>
+<button id="pegarUnoBtn" style="display:none;">Pegar UNO!</button>
 
 <script>
 (() => {
@@ -154,6 +155,7 @@
   const infoDiv = document.getElementById('info');
   const comprarBtn = document.getElementById('comprarBtn');
   const unoBtn = document.getElementById('unoBtn');
+  const pegarUnoBtn = document.getElementById('pegarUnoBtn');
   const startBtn = document.getElementById('startBtn');
   const numHumanosSelect = document.getElementById('numHumanos');
   const numBotsSelect = document.getElementById('numBots');
@@ -198,12 +200,10 @@
     );
   }
 
-  async function atualizarMesa() {
-    const cartaClone = cartaMesaDiv.cloneNode(true);
-    cartaMesaDiv.parentNode.replaceChild(cartaClone, cartaMesaDiv);
-    cartaClone.textContent = mostrarCarta(mesa);
-    cartaClone.className = mesa.cor;
-
+  function atualizarMesa() {
+    if (!mesa) return;
+    cartaMesaDiv.textContent = mostrarCarta(mesa);
+    cartaMesaDiv.className = mesa.cor;
     if (punicao > 0) {
         infoDiv.textContent = `Punição acumulada: +${punicao} cartas!`;
     } else {
@@ -230,6 +230,7 @@
 
     comprarBtn.style.display = (jogadorEhHumano && !punicao > 0) ? 'inline-block' : 'none';
     unoBtn.style.display = (jogadorEhHumano && mao.length === 2 && !unoAnunciado) ? 'inline-block' : 'none';
+    pegarUnoBtn.style.display = (jogadorAtual >= humanos || maos[jogadorAtual].length > 2) ? 'none' : 'inline-block';
 
     maoBotsDiv.innerHTML = '';
     for (let i = humanos; i < numJogadores; i++) {
@@ -347,13 +348,19 @@
     const mesaAnterior = mesa;
     mesa = carta;
     
-    await atualizarMesa();
+    cartaMesaDiv.textContent = mostrarCarta(mesa);
+    cartaMesaDiv.className = mesa.cor;
+
+    div.remove();
+
+    if (maos[(jogadorAtual + direcao + numJogadores) % numJogadores].length === 1 && !unoAnunciado) {
+      await esperar(500);
+      alert('Jogador que jogou antes tinha uma carta, mas não gritou UNO!');
+      await comprarCartas(2);
+      await esperar(1000);
+    }
     
-    if (mao.length === 1 && !unoAnunciado) {
-        infoDiv.textContent = 'Você não gritou UNO! Punição de 2 cartas.';
-        await comprarCartas(2);
-        await esperar(1000);
-    } else if (mao.length === 0) {
+    if (mao.length === 0) {
       alert(`Jogador ${jogadorAtual + 1} venceu!`);
       resetarJogo();
       return;
@@ -375,12 +382,12 @@
         if (jogadorAtual < humanos) {
             const corEscolhida = await escolherCorHumano();
             mesa.cor = corEscolhida;
-            await atualizarMesa();
+            atualizarMesa();
         } else {
             const corEscolhida = escolherCorBot(maos[jogadorAtual]);
             mesa.cor = corEscolhida;
             infoDiv.textContent = `Bot escolheu a cor ${corEscolhida}`;
-            await atualizarMesa();
+            atualizarMesa();
         }
         proximoJogador();
         await atualizarTurno();
@@ -408,12 +415,12 @@
       if (jogadorAtual < humanos) {
         const corEscolhida = await escolherCorHumano();
         mesa.cor = corEscolhida;
-        await atualizarMesa();
+        atualizarMesa();
       } else {
         const corEscolhida = escolherCorBot(maos[jogadorAtual]);
         mesa.cor = corEscolhida;
         infoDiv.textContent = `Bot escolheu a cor ${corEscolhida}`;
-        await atualizarMesa();
+        atualizarMesa();
       }
       proximoJogador();
       await atualizarTurno();
@@ -501,7 +508,7 @@
       mesa = cartaParaJogar;
       
       infoDiv.textContent = `Bot Jogador ${jogadorAtual + 1} jogou ${mostrarCarta(cartaParaJogar)}`;
-      await atualizarMesa();
+      atualizarMesa();
       atualizarMao();
 
       if (maos[jogadorAtual].length === 0) {
@@ -538,6 +545,22 @@
       unoBtn.style.display = 'none';
   };
 
+  pegarUnoBtn.onclick = async () => {
+    // Lógica para pegar o jogador que tem 1 carta e não gritou UNO!
+    const jogadorAnterior = (jogadorAtual - direcao + numJogadores) % numJogadores;
+    if (maos[jogadorAnterior].length === 1 && !unoAnunciado) {
+      infoDiv.textContent = `Opa! Jogador ${jogadorAnterior + 1} não gritou UNO! Compra 2 cartas.`;
+      maos[jogadorAnterior].push(baralho.pop());
+      maos[jogadorAnterior].push(baralho.pop());
+      atualizarMao();
+    } else {
+      infoDiv.textContent = `Você gritou "Pegar UNO!" mas o jogador estava ok. Você compra 2 cartas!`;
+      maos[jogadorAtual].push(baralho.pop());
+      maos[jogadorAtual].push(baralho.pop());
+      atualizarMao();
+    }
+  };
+
   startBtn.onclick = async () => {
     humanos = parseInt(numHumanosSelect.value);
     bots = parseInt(numBotsSelect.value);
@@ -563,7 +586,7 @@
       mesa = baralho.pop();
     } while (mesa.cor === 'Coringa' || mesa.valor === '+2' || mesa.valor === 'Pular' || mesa.valor === 'Inverter');
 
-    await atualizarMesa();
+    atualizarMesa();
     jogadorAtual = 0;
     direcao = 1;
     punicao = 0;
